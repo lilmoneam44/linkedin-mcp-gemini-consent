@@ -39,6 +39,7 @@
     </main>
     <script type="module">
       import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
       const config = window.LINKEDIN_MCP_CONFIG;
       const status = document.querySelector("#status");
       const signInButton = document.querySelector("#sign-in");
@@ -46,10 +47,12 @@
       const actions = document.querySelector("#actions");
       const authorizationId = new URL(location.href).searchParams.get("authorization_id");
       let supabase;
+
       function showError(message) {
         status.textContent = message;
         status.classList.add("error");
       }
+
       if (!config?.supabaseUrl || !config?.supabasePublishableKey || !authorizationId) {
         showError("Consent page is missing its Supabase settings or authorization request.");
       } else {
@@ -58,6 +61,7 @@
         });
         await initialize();
       }
+
       async function initialize() {
         const { data: { user }, error } = await supabase.auth.getUser();
         if (error || !user) {
@@ -66,14 +70,16 @@
           signInButton.addEventListener("click", signIn, { once: true });
           return;
         }
+
         const ownerIdentity = user.identities?.find((identity) =>
           identity.provider === "github" &&
-          String(identity.provider_id) === String(config.allowedGithubProviderId)
+          String(identity.provider_id ?? identity.id) === String(config.allowedGithubProviderId)
         );
         if (!ownerIdentity) {
           showError("This GitHub account is not allowed to authorize the LinkedIn MCP server.");
           return;
         }
+
         const { data, error: detailsError } = await supabase.auth.oauth.getAuthorizationDetails(authorizationId);
         if (detailsError || !data) {
           showError(detailsError?.message || "Could not load the OAuth request.");
@@ -83,6 +89,7 @@
           location.replace(data.redirect_url);
           return;
         }
+
         const clientName = data.client?.name || data.client_name || "Connected AI app";
         const requestedScopes = data.scope || data.scopes?.join(" ") || "No additional scopes listed";
         document.querySelector("#client").textContent = `${clientName} is requesting access to this MCP server.`;
@@ -93,9 +100,10 @@
         document.querySelector("#approve").addEventListener("click", () => decide(true), { once: true });
         document.querySelector("#deny").addEventListener("click", () => decide(false), { once: true });
       }
+
       async function signIn() {
         signInButton.disabled = true;
-        const redirectTo = `${location.origin}` + location.pathname + location.search;
+        const redirectTo = `${location.origin}${location.pathname}${location.search}`;
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "github",
           options: { redirectTo },
@@ -105,6 +113,7 @@
           showError(error.message);
         }
       }
+
       async function decide(approved) {
         const buttons = [...actions.querySelectorAll("button")];
         buttons.forEach((button) => button.disabled = true);
