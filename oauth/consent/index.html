@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Authorize LinkedIn MCP</title>
+    <style>
+      :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f4f6f8; color: #17212b; }
+      main { width: min(92vw, 34rem); padding: 2rem; box-sizing: border-box; background: white; border: 1px solid #d5dce3; border-radius: 1rem; box-shadow: 0 1rem 3rem #17212b18; }
+      h1 { margin-top: 0; font-size: 1.5rem; }
+      p { line-height: 1.55; }
+      .muted { color: #566575; font-size: .95rem; }
+      .error { color: #a32121; }
+      button { padding: .75rem 1rem; border: 0; border-radius: .5rem; font: inherit; cursor: pointer; }
+      .primary { background: #0969da; color: white; }
+      .secondary { background: #e9edf2; color: #17212b; margin-left: .5rem; }
+      #actions { margin-top: 1.5rem; }
+      #details { overflow-wrap: anywhere; }
+      [hidden] { display: none !important; }
+    </style>
+    <script src="../../config.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Authorize LinkedIn MCP</h1>
+      <p id="status" class="muted">Checking the authorization request…</p>
+      <section id="details" hidden>
+        <p id="client"></p>
+        <p id="scopes" class="muted"></p>
+        <p class="muted">Approving lets this signed-in account use the LinkedIn tools. A LinkedIn post still requires the tool's separate confirmation step.</p>
+      </section>
+      <div id="actions" hidden>
+        <button id="approve" class="primary" type="button">Approve access</button>
+        <button id="deny" class="secondary" type="button">Deny</button>
+      </div>
+      <button id="sign-in" class="primary" type="button" hidden>Sign in with GitHub</button>
+    </main>
+    <script type="module">
+      import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+      const config = window.LINKEDIN_MCP_CONFIG;
+      const status = document.querySelector("#status");
+      const signInButton = document.querySelector("#sign-in");
+      const detailsPanel = document.querySelector("#details");
+      const actions = document.querySelector("#actions");
+      const authorizationId = new URL(location.href).searchParams.get("authorization_id");
+      let supabase;
+      function showError(message) {
+        status.textContent = message;
+        status.classList.add("error");
+      }
+      if (!config?.supabaseUrl || !config?.supabasePublishableKey || !authorizationId) {
+        showError("Consent page is missing its Supabase settings or authorization request.");
+      } else {
+        supabase = createClient(config.supabaseUrl, config.supabasePublishableKey, {
+          auth: { flowType: "pkce", detectSessionInUrl: true, persistSession: true },
+        });
+        await initialize();
+      }
+      async function initialize() {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) {
+          status.textContent = "Sign in with the allowed GitHub account to review this request.";
+          signInButton.hidden = false;
+          signInButton.addEventListener("click", signIn, { once: true });
+          return;
+        }
+        const ownerIdentity = user.identities?.find((identity) =>
+          identity.provider === "github" &&
+          String(identity.provider_id) === String(config.allowedGithubProviderId)
+        );
+        if (!ownerIdentity) {
+          showError("This GitHub account is not allowed to authorize the LinkedIn MCP server.");
+          return;
+        }
+        const { data, error: detailsError } = await supabase.auth.oauth.getAuthorizationDetails(authorizationId);
+        if (detailsError || !data) {
+          showError(detailsError?.message || "Could not load the OAuth request.");
+          return;
+        }
+        if (data.redirect_url) {
+          location.replace(data.redirect_url);
+          return;
+        }
+        const clientName = data.client?.name || data.client_name || "Connected AI app";
+        const requestedScopes = data.scope || data.scopes?.join(" ") || "No additional scopes listed";
+        document.querySelector("#client").textContent = `${clientName} is requesting access to this MCP server.`;
+        document.querySelector("#scopes").textContent = `Requested scopes: ${requestedScopes}`;
+        status.textContent = "Review the request before approving.";
+        detailsPanel.hidden = false;
+        actions.hidden = false;
+        document.querySelector("#approve").addEventListener("click", () => decide(true), { once: true });
+        document.querySelector("#deny").addEventListener("click", () => decide(false), { once: true });
+      }
+      async function signIn() {
+        signInButton.disabled = true;
+        const redirectTo = `${location.origin}` + location.pathname + location.search;
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "github",
+          options: { redirectTo },
+        });
+        if (error) {
+          signInButton.disabled = false;
+          showError(error.message);
+        }
+      }
+      async function decide(approved) {
+        const buttons = [...actions.querySelectorAll("button")];
+        buttons.forEach((button) => button.disabled = true);
+        status.textContent = approved ? "Approving access…" : "Denying access…";
+        const result = approved
+          ? await supabase.auth.oauth.approveAuthorization(authorizationId)
+          : await supabase.auth.oauth.denyAuthorization(authorizationId);
+        if (result.error || !result.data?.redirect_url) {
+          buttons.forEach((button) => button.disabled = false);
+          showError(result.error?.message || "Supabase did not return a redirect URL.");
+          return;
+        }
+        location.assign(result.data.redirect_url);
+      }
+    </script>
+  </body>
+</html>
