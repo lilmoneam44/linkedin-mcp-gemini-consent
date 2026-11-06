@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="description" content="Owner portal for the LinkedIn Personal Copilot." />
+    <title>LinkedIn Personal Copilot</title>
+    <style>
+      :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      body { --surface: #fff; --text: #17212b; --muted: #566575; --border: #d5dce3; --soft: #e9edf2; margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 1rem; background: #f4f6f8; color: var(--text); }
+      @media (prefers-color-scheme: dark) { body { --surface: #171b21; --text: #f1f4f8; --muted: #aab6c3; --border: #343d48; --soft: #29313b; background: #0f1216; } }
+      main { width: min(100%, 42rem); padding: clamp(1.25rem, 5vw, 2.5rem); border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); box-shadow: 0 1rem 3rem #17212b18; }
+      h1 { margin-block-start: 0; }
+      p { line-height: 1.7; color: var(--muted); }
+      nav { display: flex; flex-wrap: wrap; gap: .75rem; margin-block-start: 1.5rem; }
+      a { display: inline-flex; min-height: 2.75rem; align-items: center; padding: .7rem 1rem; border-radius: .5rem; background: #0969da; color: #fff; text-decoration: none; }
+      a:focus-visible { outline: 3px solid #80b7ff; outline-offset: 3px; }
+      button { float: left; min-height: 2.5rem; padding: .5rem .8rem; border: 0; border-radius: .5rem; background: var(--soft); color: var(--text); font: inherit; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <button id="language" type="button" aria-label="Switch language">English</button>
+      <h1 id="title">LinkedIn Personal Copilot</h1>
+      <p id="description">بوابة خاصة لإدارة الربط الآمن ومكتبة الصور. أدوات النشر لا تنشر أي شيء إلا بعد معاينة وموافقة منفصلة.</p>
+      <nav>
+        <a id="consent" href="oauth/consent/">صفحة الموافقة</a>
+        <a id="upload" href="upload/">مكتبة الصور</a>
+      </nav>
+    </main>
+    <script>
+      const toggle = document.querySelector("#language");
+      const title = document.querySelector("#title");
+      const description = document.querySelector("#description");
+      const consent = document.querySelector("#consent");
+      const upload = document.querySelector("#upload");
+      toggle.addEventListener("click", () => {
+        const english = document.documentElement.lang === "ar";
+        document.documentElement.lang = english ? "en" : "ar";
+        document.documentElement.dir = english ? "ltr" : "rtl";
+        title.textContent = english ? "LinkedIn Personal Copilot" : "مساعد LinkedIn المهني";
+        description.textContent = english
+          ? "A private portal for secure connection and image-library management. Publishing tools never post without a separate preview and approval."
+          : "بوابة خاصة لإدارة الربط الآمن ومكتبة الصور. أدوات النشر لا تنشر أي شيء إلا بعد معاينة وموافقة منفصلة.";
+        consent.textContent = english ? "OAuth consent" : "صفحة الموافقة";
+        upload.textContent = english ? "Image library" : "مكتبة الصور";
+        toggle.textContent = english ? "العربية" : "English";
+      });
+    </script>
+  </body>
+</html>

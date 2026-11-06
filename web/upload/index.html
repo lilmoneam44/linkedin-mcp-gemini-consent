@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>مكتبة صور LinkedIn</title>
+    <style>
+    :root {
+      color-scheme: light dark;
+      font-family: system-ui, sans-serif;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      --surface: #fff;
+      --text: #17212b;
+      --muted: #566575;
+      --border: #d5dce3;
+      --soft: #e9edf2;
+      --error: #a32121;
+      margin: 0;
+      min-height: 100vh;
+      padding: 1rem;
+      background: #f4f6f8;
+      color: var(--text);
+    }
+    @media (prefers-color-scheme: dark) {
+      body {
+        --surface: #171b21;
+        --text: #f1f4f8;
+        --muted: #aab6c3;
+        --border: #343d48;
+        --soft: #29313b;
+        --error: #ff8e8e;
+        background: #0f1216;
+      }
+    }
+    main {
+      width: min(100%, 56rem);
+      margin: 2rem auto;
+      padding: clamp(1rem, 4vw, 2rem);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      box-shadow: 0 1rem 3rem #17212b18;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+    }
+    h1 {
+      margin-block: 0 .5rem;
+      font-size: 1.5rem;
+    }
+    p {
+      line-height: 1.55;
+    }
+    .muted {
+      color: var(--muted);
+    }
+    .error {
+      color: var(--error);
+    }
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+    button {
+      min-height: 2.6rem;
+      padding: .6rem 1rem;
+      border: 0;
+      border-radius: .5rem;
+      cursor: pointer;
+      background: var(--soft);
+      color: var(--text);
+    }
+    button.primary {
+      background: #0969da;
+      color: white;
+    }
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible {
+      outline: 3px solid #80b7ff;
+      outline-offset: 3px;
+    }
+    button:disabled {
+      cursor: wait;
+      opacity: .65;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+    input,
+    textarea {
+      display: block;
+      width: 100%;
+      margin-top: .4rem;
+      padding: .7rem;
+      border: 1px solid var(--border);
+      border-radius: .5rem;
+      background: var(--surface);
+      color: var(--text);
+    }
+    textarea {
+      min-height: 5rem;
+      resize: vertical;
+    }
+    #status {
+      min-height: 1.6rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .card {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: .75rem;
+    }
+    .card img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: contain;
+      background: var(--soft);
+    }
+    .card div {
+      padding: .75rem;
+    }
+    .card p {
+      margin: .3rem 0;
+      overflow-wrap: anywhere;
+    }
+    [hidden] {
+      display: none !important;
+    }
+    </style>
+    <script src="../config.js"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1 id="heading">مكتبة صور LinkedIn</h1>
+          <p id="intro"
+            class="muted">الصور خاصة بحسابك. نقبل JPEG وPNG فقط، ونعيد حفظ الصورة قبل الرفع لإزالة بيانات EXIF مثل الموقع.</p>
+        </div>
+        <button id="language" type="button"
+          aria-label="Switch language">English</button>
+      </header>
+      <p id="status" class="muted"
+        aria-live="polite">جارٍ التحقق من الإعدادات…</p>
+      <button id="sign-in" class="primary" type="button"
+        hidden>تسجيل الدخول عبر GitHub</button>
+      <section id="library" hidden>
+        <form id="upload-form">
+          <label for="image"
+            id="image-label">الصورة (JPEG أو PNG، بحد أقصى 8 ميجابايت)</label>
+          <input id="image" type="file" accept="image/jpeg,image/png"
+            required />
+          <label for="alt" id="alt-label">وصف بديل للصورة</label>
+          <textarea id="alt" maxlength="500" required></textarea>
+          <label for="caption" id="caption-label">تعليق اختياري</label>
+          <textarea id="caption" maxlength="1000"></textarea>
+          <label for="tags"
+            id="tags-label">وسوم اختيارية، افصل بينها بفاصلة</label>
+          <input id="tags" maxlength="500" />
+          <p class="muted"
+            id="privacy-note">لن نرفع الصور إلى LinkedIn من هذه الصفحة. الرفع إلى LinkedIn يحدث فقط عند اعتماد معاينة منشور من أداة النشر.</p>
+          <button class="primary" id="upload-button"
+            type="submit">رفع إلى المكتبة الخاصة</button>
+          <button id="refresh" type="button">تحديث المكتبة</button>
+          <button id="sign-out" type="button">تسجيل الخروج</button>
+        </form>
+        <section id="items" class="grid" aria-live="polite"></section>
+      </section>
+    </main>
+    <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2.119.0";
+
+    const config = window.LINKEDIN_MCP_CONFIG;
+    const status = document.querySelector("#status");
+    const signInButton = document.querySelector("#sign-in");
+    const library = document.querySelector("#library");
+    const form = document.querySelector("#upload-form");
+    const uploadButton = document.querySelector("#upload-button");
+    const items = document.querySelector("#items");
+    const languageButton = document.querySelector("#language");
+    const copy = {
+      ar: {
+        heading: "مكتبة صور LinkedIn",
+        intro:
+          "الصور خاصة بحسابك. نقبل JPEG وPNG فقط، ونعيد حفظ الصورة قبل الرفع لإزالة بيانات EXIF مثل الموقع.",
+        loading: "جارٍ التحقق من الإعدادات…",
+        signIn: "تسجيل الدخول عبر GitHub",
+        denied: "حساب GitHub ده مش مسموح له باستخدام المكتبة.",
+        image: "الصورة (JPEG أو PNG، بحد أقصى 8 ميجابايت)",
+        alt: "وصف بديل للصورة",
+        caption: "تعليق اختياري",
+        tags: "وسوم اختيارية، افصل بينها بفاصلة",
+        privacy:
+          "لن نرفع الصور إلى LinkedIn من هذه الصفحة. الرفع إلى LinkedIn يحدث فقط عند اعتماد معاينة منشور من أداة النشر.",
+        upload: "رفع إلى المكتبة الخاصة",
+        refresh: "تحديث المكتبة",
+        signOut: "تسجيل الخروج",
+        choose: "اختار صورة JPEG أو PNG حجمها لا يتجاوز 8 ميجابايت.",
+        altRequired: "اكتب وصفاً بديلاً للصورة.",
+        processing: "جارٍ تنظيف الصورة ورفعها إلى مكتبتك الخاصة…",
+        saved: "تم حفظ الصورة في مكتبتك الخاصة.",
+        failed: "تعذر رفع الصورة.",
+        empty: "لا توجد صور محفوظة بعد.",
+        loadingItems: "جارٍ تحميل المكتبة…",
+        itemAlt: "الوصف البديل",
+        itemCaption: "التعليق",
+        bytes: "الحجم",
+        imageFail: "المتصفح لم يتمكن من معالجة الصورة بأمان.",
+        largePixels: "أبعاد الصورة كبيرة جداً؛ قلّصها ثم جرّب مرة أخرى.",
+        language: "English",
+        setup: "إعدادات الصفحة أو حساب Supabase غير متاحة.",
+        signedOut: "سجّل الدخول بحساب GitHub المسموح.",
+        out: "تم تسجيل الخروج.",
+      },
+      en: {
+        heading: "LinkedIn image library",
+        intro:
+          "Images are private to your account. JPEG and PNG only. The image is re-encoded before upload to strip EXIF data such as location.",
+        loading: "Checking configuration…",
+        signIn: "Sign in with GitHub",
+        denied: "This GitHub account is not allowed to use the library.",
+        image: "Image (JPEG or PNG, up to 8 MB)",
+        alt: "Image alt text",
+        caption: "Optional caption",
+        tags: "Optional tags, separated by commas",
+        privacy:
+          "This page does not upload images to LinkedIn. A LinkedIn upload happens only after an owner approves a post preview.",
+        upload: "Upload to private library",
+        refresh: "Refresh library",
+        signOut: "Sign out",
+        choose: "Choose a JPEG or PNG image no larger than 8 MB.",
+        altRequired: "Enter alt text for the image.",
+        processing:
+          "Re-encoding the image and uploading it to your private library…",
+        saved: "Image saved to your private library.",
+        failed: "Image upload failed.",
+        empty: "No images saved yet.",
+        loadingItems: "Loading your library…",
+        itemAlt: "Alt text",
+        itemCaption: "Caption",
+        bytes: "Size",
+        imageFail: "The browser could not safely process this image.",
+        largePixels: "Image dimensions are too large. Resize it and try again.",
+        language: "العربية",
+        setup: "Page or Supabase configuration is unavailable.",
+        signedOut: "Sign in with the allowed GitHub account.",
+        out: "Signed out.",
+      },
+    };
+    let language = "ar";
+    let supabase;
+    let user;
+
+    function t(key) {
+      return copy[language][key];
+    }
+    function setLanguage(next) {
+      language = next;
+      document.documentElement.lang = next;
+      document.documentElement.dir = next === "ar" ? "rtl" : "ltr";
+      for (
+        const [id, key] of Object.entries({
+          heading: "heading",
+          intro: "intro",
+          "image-label": "image",
+          "alt-label": "alt",
+          "caption-label": "caption",
+          "tags-label": "tags",
+          "privacy-note": "privacy",
+          "upload-button": "upload",
+          refresh: "refresh",
+          "sign-out": "signOut",
+          "sign-in": "signIn",
+        })
+      ) document.getElementById(id).textContent = t(key);
+      languageButton.textContent = t("language");
+      languageButton.setAttribute(
+        "aria-label",
+        next === "ar" ? "تغيير اللغة إلى الإنجليزية" : "Switch language",
+      );
+    }
+    function showError(message) {
+      status.textContent = message;
+      status.classList.add("error");
+    }
+    function hex(bytes) {
+      return Array.from(
+        new Uint8Array(bytes),
+        (v) => v.toString(16).padStart(2, "0"),
+      ).join("");
+    }
+
+    languageButton.addEventListener(
+      "click",
+      () => setLanguage(language === "ar" ? "en" : "ar"),
+    );
+    setLanguage("ar");
+    if (
+      !config?.supabaseUrl || !config?.supabasePublishableKey ||
+      !config?.allowedGithubProviderId
+    ) {
+      showError(t("setup"));
+    } else {
+      supabase = createClient(config.supabaseUrl, config.supabasePublishableKey, {
+        auth: { flowType: "pkce", detectSessionInUrl: true, persistSession: true },
+      });
+      await initialize();
+    }
+
+    async function initialize() {
+      const { data } = await supabase.auth.getUser();
+      user = data.user;
+      if (!user) {
+        status.textContent = t("signedOut");
+        signInButton.hidden = false;
+        signInButton.addEventListener("click", signIn);
+        return;
+      }
+      const identity = user.identities?.find((item) =>
+        item.provider === "github" &&
+        String(item.provider_id ?? item.id) ===
+          String(config.allowedGithubProviderId)
+      );
+      if (!identity) {
+        showError(t("denied"));
+        return;
+      }
+      signInButton.hidden = true;
+      library.hidden = false;
+      status.textContent = "";
+      await loadItems();
+    }
+
+    async function signIn() {
+      signInButton.disabled = true;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "github",
+        options: { redirectTo: `${location.origin}${location.pathname}` },
+      });
+      if (error) {
+        signInButton.disabled = false;
+        showError(error.message);
+      }
+    }
+
+    async function reencode(file) {
+      if (
+        !new Set(["image/jpeg", "image/png"]).has(file.type) ||
+        file.size > 8 * 1024 * 1024
+      ) {
+        throw new Error(t("choose"));
+      }
+      let bitmap;
+      try {
+        bitmap = await createImageBitmap(file);
+      } catch {
+        throw new Error(t("imageFail"));
+      }
+      try {
+        if (
+          bitmap.width < 1 || bitmap.height < 1 || bitmap.width > 8000 ||
+          bitmap.height > 8000 || bitmap.width * bitmap.height > 16_000_000
+        ) {
+          throw new Error(t("largePixels"));
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        const context = canvas.getContext("2d", {
+          alpha: file.type === "image/png",
+        });
+        if (!context) throw new Error(t("imageFail"));
+        context.drawImage(bitmap, 0, 0);
+        const blob = await new Promise((resolve) =>
+          canvas.toBlob(resolve, file.type, 0.92)
+        );
+        if (
+          !(blob instanceof Blob) || blob.size < 1 || blob.size > 8 * 1024 * 1024
+        ) throw new Error(t("choose"));
+        return {
+          blob,
+          width: bitmap.width,
+          height: bitmap.height,
+          mime: file.type,
+        };
+      } finally {
+        bitmap.close();
+      }
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const file = document.querySelector("#image").files?.[0];
+      const alt = document.querySelector("#alt").value.trim();
+      const caption = document.querySelector("#caption").value.trim();
+      const tags = document.querySelector("#tags").value.split(",").map((tag) =>
+        tag.trim()
+      ).filter(Boolean).slice(0, 20);
+      if (!file) {
+        showError(t("choose"));
+        return;
+      }
+      if (!alt) {
+        showError(t("altRequired"));
+        return;
+      }
+      uploadButton.disabled = true;
+      status.classList.remove("error");
+      status.textContent = t("processing");
+      let path;
+      try {
+        const image = await reencode(file);
+        const extension = image.mime === "image/png" ? "png" : "jpg";
+        path = `${user.id}/${crypto.randomUUID()}.${extension}`;
+        const digest = hex(
+          await crypto.subtle.digest("SHA-256", await image.blob.arrayBuffer()),
+        );
+        const upload = await supabase.storage.from("linkedin-media").upload(
+          path,
+          image.blob,
+          {
+            contentType: image.mime,
+            cacheControl: "3600",
+            upsert: false,
+          },
+        );
+        if (upload.error) throw upload.error;
+        const saved = await supabase.from("media").insert({
+          owner_id: user.id,
+          storage_path: path,
+          mime_type: image.mime,
+          byte_count: image.blob.size,
+          width: image.width,
+          height: image.height,
+          caption: caption || null,
+          alt_text: alt,
+          tags,
+          content_sha256: digest,
+          source_name: "browser_upload",
+        });
+        if (saved.error) {
+          await supabase.storage.from("linkedin-media").remove([path]);
+          path = undefined;
+          throw saved.error;
+        }
+        form.reset();
+        status.textContent = t("saved");
+        await loadItems();
+      } catch (error) {
+        showError(
+          error instanceof Error && error.message ? error.message : t("failed"),
+        );
+      } finally {
+        uploadButton.disabled = false;
+      }
+    });
+
+    async function loadItems() {
+      status.classList.remove("error");
+      status.textContent = t("loadingItems");
+      items.replaceChildren();
+      const { data, error } = await supabase.from("media")
+        .select(
+          "id,storage_path,mime_type,byte_count,width,height,caption,alt_text,tags,created_at",
+        )
+        .eq("owner_id", user.id).is("deleted_at", null).order("created_at", {
+          ascending: false,
+        }).limit(50);
+      if (error) {
+        showError(error.message);
+        return;
+      }
+      if (!data?.length) {
+        status.textContent = t("empty");
+        return;
+      }
+      status.textContent = "";
+      for (const item of data) {
+        const { data: signed, error: signedError } = await supabase.storage.from(
+          "linkedin-media",
+        ).createSignedUrl(item.storage_path, 300);
+        if (signedError || !signed?.signedUrl) continue;
+        const card = document.createElement("article");
+        card.className = "card";
+        const img = document.createElement("img");
+        img.src = signed.signedUrl;
+        img.alt = item.alt_text;
+        const details = document.createElement("div");
+        const alt = document.createElement("p");
+        alt.textContent = `${t("itemAlt")}: ${item.alt_text}`;
+        const caption = document.createElement("p");
+        caption.textContent = `${t("itemCaption")}: ${item.caption || "—"}`;
+        const size = document.createElement("p");
+        size.className = "muted";
+        size.textContent = `${item.width} × ${item.height} · ${
+          t("bytes")
+        }: ${item.byte_count}`;
+        details.append(alt, caption, size);
+        card.append(img, details);
+        items.append(card);
+      }
+    }
+
+    document.querySelector("#refresh").addEventListener("click", loadItems);
+    document.querySelector("#sign-out").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      library.hidden = true;
+      status.textContent = t("out");
+      signInButton.hidden = false;
+    });
+    </script>
+  </body>
+</html>

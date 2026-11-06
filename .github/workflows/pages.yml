@@ -1,0 +1,64 @@
+name: Publish owner portal
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Validate public site settings
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          ALLOWED_GITHUB_PROVIDER_ID: ${{ vars.ALLOWED_GITHUB_PROVIDER_ID }}
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, re, sys
+          url = os.environ.get("SUPABASE_URL", "").rstrip("/")
+          key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "")
+          owner = os.environ.get("ALLOWED_GITHUB_PROVIDER_ID", "")
+          if not re.fullmatch(r"https://[a-z0-9-]+\.supabase\.co", url):
+              sys.exit("SUPABASE_URL GitHub variable is missing or invalid")
+          if not key.startswith("sb_publishable_"):
+              sys.exit("SUPABASE_PUBLISHABLE_KEY GitHub variable is missing or invalid")
+          if not owner.isdigit():
+              sys.exit("ALLOWED_GITHUB_PROVIDER_ID GitHub variable is missing or invalid")
+          content = "window.LINKEDIN_MCP_CONFIG = " + json.dumps({
+              "supabaseUrl": url,
+              "supabasePublishableKey": key,
+              "allowedGithubProviderId": owner,
+          }, separators=(",", ":")) + ";\n"
+          pathlib.Path("web/config.js").write_text(content, encoding="utf-8")
+          PY
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: web
+
+      - name: Deploy owner portal
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

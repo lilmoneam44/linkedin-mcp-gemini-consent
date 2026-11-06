@@ -1,0 +1,7 @@
+// Public browser configuration. The publishable key is intentionally visible here.
+// Never put a Supabase secret key, LinkedIn token, or OAuth client secret in this file.
+window.LINKEDIN_MCP_CONFIG = {
+  supabaseUrl: "https://avhghufgfjshugasvyfx.supabase.co",
+  supabasePublishableKey: "sb_publishable_CJnKTSwqNPSRXd4TkMcBJw_Vl0gL1rg",
+  allowedGithubProviderId: "210568030",
+};
